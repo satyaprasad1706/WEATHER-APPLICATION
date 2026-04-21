@@ -283,14 +283,17 @@ async function fetchAll(rawCity) {
   showLoader();
   try {
     const res = await fetch(`${BASE_URL}?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`);
-    if (!res.ok) throw new Error();
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(res.status === 404 ? "City not found. Please try again." : `API error: ${json.message || res.status}`);
+    }
     const data = await res.json();
     lastWeather = data;
     renderWeather(data);
     saveHistory(data.name);
     fetchAQI(data.coord.lat, data.coord.lon);
     fetchForecastByCoords(data.coord.lat, data.coord.lon);
-  } catch { showError(); } finally { hideLoader(); }
+  } catch (err) { showError(err?.message); } finally { hideLoader(); }
 }
 
 async function fetchAllByCoords(lat, lon) {
@@ -317,7 +320,11 @@ async function fetchForecastByCoords(lat, lon) {
   } catch { document.getElementById("forecastList").textContent = "Forecast unavailable."; }
 }
 
-function showError()  { mainContent.classList.add("hidden"); errorDiv.classList.remove("hidden"); }
+function showError(msg) {
+  mainContent.classList.add("hidden");
+  errorDiv.classList.remove("hidden");
+  errorDiv.querySelector("span").textContent = msg || "City not found. Please try again.";
+}
 function showLoader() { errorDiv.classList.add("hidden"); mainContent.classList.add("hidden"); loader.classList.remove("hidden"); }
 function hideLoader() { loader.classList.add("hidden"); }
 
