@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WeatherNow</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+  <div class="bg-layer" id="bgLayer"></div>
+  <div class="particles" id="particles"></div>
+  <div class="bg-overlay"></div>
+
+  <div class="page-wrap">
+    <div class="left-panel">
+
+      <div class="header">
+        <div class="logo"><i class="fa fa-cloud-sun"></i> WeatherNow</div>
+        <div class="header-right">
+          <div class="unit-toggle">
+            <button id="btnC" class="unit-btn active">°C</button>
+            <button id="btnF" class="unit-btn">°F</button>
+          </div>
+          <div class="header-time" id="headerTime"></div>
+        </div>
+      </div>
+
+      <div class="search-wrapper">
+        <div class="search-bar">
+          <i class="fa fa-search search-icon"></i>
+          <input type="text" id="cityInput" placeholder="Search for a city..." autocomplete="off"/>
+          <button id="locationBtn" title="Use my location"><i class="fa fa-location-crosshairs"></i></button>
+          <button id="searchBtn">Search</button>
+        </div>
+        <div class="history-chips" id="historyChips"></div>
+      </div>
+
+      <div id="loader" class="loader hidden">
+        <div class="spinner"></div>
+        <span>Fetching weather...</span>
+      </div>
+
+      <div id="error" class="error hidden">
+        <i class="fa fa-triangle-exclamation"></i>
+        <span>City not found. Please try again.</span>
+      </div>
+
+      <div id="mainContent" class="hidden">
+        <div class="weather-card">
+
+          <div class="card-header-row">
+            <div class="location-info">
+              <h1 id="cityName"></h1>
+              <p class="country-date">
+                <span id="countryCode"></span>
+                <span class="dot">·</span>
+                <span id="date"></span>
+              </p>
+            </div>
+            <div class="aqi-badge" id="aqiBadge">
+              <span class="aqi-dot" id="aqiDot"></span>
+              <span id="aqiText">AQI</span>
+            </div>
+          </div>
+
+          <div class="hero-center">
+            <img id="weatherIcon" src="" alt="weather icon"/>
+            <div class="temp-col">
+              <div class="temp" id="temp"></div>
+              <div class="feels-like">Feels like <span id="feelsLike"></span></div>
+              <div class="description-badge" id="description"></div>
+            </div>
+          </div>
+
+          <div class="aqi-detail-bar" id="aqiDetailBar">
+            <div class="aqi-detail-item"><span class="aqi-detail-label">PM2.5</span><span class="aqi-detail-val" id="aqiPm25">—</span></div>
+            <div class="aqi-detail-item"><span class="aqi-detail-label">PM10</span><span class="aqi-detail-val" id="aqiPm10">—</span></div>
+            <div class="aqi-detail-item"><span class="aqi-detail-label">CO</span><span class="aqi-detail-val" id="aqiCo">—</span></div>
+            <div class="aqi-detail-item"><span class="aqi-detail-label">NO₂</span><span class="aqi-detail-val" id="aqiNo2">—</span></div>
+            <div class="aqi-detail-item"><span class="aqi-detail-label">O₃</span><span class="aqi-detail-val" id="aqiO3">—</span></div>
+          </div>
+
+          <div class="weather-tip">
+            <i class="fa fa-lightbulb"></i>
+            <span id="tipText"></span>
+          </div>
+
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="today">Today</button>
+            <button class="tab-btn" data-tab="forecast">5-Day</button>
+            <button class="tab-btn" data-tab="map">Map</button>
+          </div>
+
+          <div class="tab-content active" id="tab-today">
+            <div class="minmax-bar">
+              <span><i class="fa fa-temperature-arrow-down"></i> <strong id="tempMin"></strong></span>
+              <div class="temp-range-track"><div class="temp-range-fill" id="tempRangeFill"></div></div>
+              <span><i class="fa fa-temperature-arrow-up"></i> <strong id="tempMax"></strong></span>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon humidity-icon"><i class="fa fa-droplet"></i></div>
+                <div class="stat-info"><span class="stat-value" id="humidity"></span><span class="stat-label">Humidity</span></div>
+                <svg class="ring" viewBox="0 0 36 36">
+                  <path class="ring-bg" d="M18 2 a16 16 0 0 1 0 32 a16 16 0 0 1 0 -32"/>
+                  <path class="ring-fill" id="humidityRing" d="M18 2 a16 16 0 0 1 0 32 a16 16 0 0 1 0 -32" stroke-dasharray="0 100"/>
+                </svg>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon wind-icon"><i class="fa fa-wind"></i></div>
+                <div class="stat-info"><span class="stat-value" id="wind"></span><span class="stat-label">Wind</span></div>
+                <div class="wind-dir" id="windDir"></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon vis-icon"><i class="fa fa-eye"></i></div>
+                <div class="stat-info"><span class="stat-value" id="visibility"></span><span class="stat-label">Visibility</span></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon pressure-icon"><i class="fa fa-gauge-high"></i></div>
+                <div class="stat-info"><span class="stat-value" id="pressure"></span><span class="stat-label">Pressure</span></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon dew-icon"><i class="fa fa-temperature-half"></i></div>
+                <div class="stat-info"><span class="stat-value" id="dewPoint"></span><span class="stat-label">Dew Point</span></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon cloud-icon"><i class="fa fa-cloud"></i></div>
+                <div class="stat-info"><span class="stat-value" id="cloudiness"></span><span class="stat-label">Cloudiness</span></div>
+              </div>
+            </div>
+            <div class="sun-row">
+              <div class="sun-card">
+                <i class="fa fa-sun sunrise-clr"></i>
+                <div><div class="sun-time" id="sunrise"></div><div class="sun-label">Sunrise</div></div>
+              </div>
+              <div class="sun-arc">
+                <svg viewBox="0 0 120 60" fill="none">
+                  <path d="M10 55 Q60 -10 110 55" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none"/>
+                  <circle id="sunDot" cx="10" cy="55" r="5" fill="#fbbf24"/>
+                </svg>
+              </div>
+              <div class="sun-card right">
+                <i class="fa fa-moon sunset-clr"></i>
+                <div><div class="sun-time" id="sunset"></div><div class="sun-label">Sunset</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-content" id="tab-forecast">
+            <div class="forecast-list" id="forecastList"></div>
+          </div>
+
+          <div class="tab-content" id="tab-map">
+            <div class="map-hint"><i class="fa fa-hand-pointer"></i> Click anywhere on the map to get weather & AQI</div>
+            <div id="weatherMap"></div>
+            <div class="map-layer-btns">
+              <button class="map-layer-btn active" data-layer="temp">🌡 Temp</button>
+              <button class="map-layer-btn" data-layer="precipitation">🌧 Rain</button>
+              <button class="map-layer-btn" data-layer="wind">💨 Wind</button>
+              <button class="map-layer-btn" data-layer="clouds">☁️ Clouds</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
